@@ -15,6 +15,8 @@ on:
     types: [started]
 env:
   BUILD_OWNER: lee29	
+  TNAME: B70
+  T_NAMES: "B70"
   BASE_PATH: padavan                # 基础目录
   PUBLIC_PATH: public               # 公共目录
   PUBLIC_SH: public.sh              # 公共命令
@@ -54,8 +56,6 @@ jobs:
         # tar -xvf mipsel-linux-uclibc.tar.xz -C toolchain-3.4.x
         mkdir -p /opt/images/
     - name: Clear And Build            # 5.清理构建树并开始构建
-      env:
-        T_NAMES: "B70"        # 设备名字数组
       run: |
         # 循环替换自定义默认模板和构建，单个设备的 sh 拷贝 t_item 需要编译的固件名字
         for t_item in $T_NAMES;
@@ -86,9 +86,7 @@ jobs:
               echo "${THEME_PATH} 复制主题文件结束"  
         fi
         done
-    - name: Build Firmware
-      env:
-        TNAME: B70
+    - name: 加载默认机型配置
       run: |
         cd /opt/rt-n56u/trunk
         if [ ! -f configs/templates/$TNAME.config ] ; then
@@ -98,31 +96,31 @@ jobs:
         cp -f configs/templates/$TNAME.config .config
         sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config
 
-    - name: Recovery SSP bin files download from remote
+    - name: 替换ssp
       if: env.RECOVERY_SSPBINREMOTEDOWNLOAD == 'true'
       run: |
-        cp -f $BASE_PATH/B70/replace/ssp/shadowsocks.sh $WORK_PATH/trunk/user/shadowsocks/scripts
-        cp -f $BASE_PATH/B70/replace/ssp/defaults.c $WORK_PATH/trunk/user/shared
-        cp -f $BASE_PATH/B70/replace/ssp/variables.c $WORK_PATH//trunk/user/httpd
-        cp -f $BASE_PATH/B70/replace/ssp/Shadowsocks.asp $WORK_PATH/trunk/user/www/n56u_ribbon_fixed
+        cp -f $BASE_PATH/$TNAME/replace/ssp/shadowsocks.sh $WORK_PATH/trunk/user/shadowsocks/scripts
+        cp -f $BASE_PATH/$TNAME/replace/ssp/defaults.c $WORK_PATH/trunk/user/shared
+        cp -f $BASE_PATH/$TNAME/replace/ssp/variables.c $WORK_PATH//trunk/user/httpd
+        cp -f $BASE_PATH/$TNAME/replace/ssp/Shadowsocks.asp $WORK_PATH/trunk/user/www/n56u_ribbon_fixed
         cd $WORK_PATH/trunk/user/shared
-        sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/trojan#https://cdn.jsdelivr.net/gh/${BUILD_OWNER}/Actions-Padavan/${BASE_PATH}/${t_item}/replace/ssp/trojan#g" ./defaults.c
-        sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/v2ray#https://cdn.jsdelivr.net/gh/${BUILD_OWNER}/Actions-Padavan/${BASE_PATH}/${t_item}/replace/ssp/v2ray#g" ./defaults.c
+        sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/trojan#https://cdn.jsdelivr.net/gh/${BUILD_OWNER}/AutoBuild-Padavan/${BASE_PATH}/B70/replace/ssp/trojan#g" ./defaults.c
+        sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/v2ray#https://cdn.jsdelivr.net/gh/${BUILD_OWNER}/AutoBuild-Padavan/${BASE_PATH}/B70/replace/ssp/v2ray#g" ./defaults.c
         #cd $WORK_PATH/trunk/user/unblockmusic/scripts
-        #sed -i "s#https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/unblockmusic/UnblockNeteaseMusic#https://cdn.jsdelivr.net/gh/${BUILD_OWNER}/Actions-Padavan/${BASE_PATH}/${t_item}/replace/unblockmusic/UnblockNeteaseMusic#g" ./unblockmusic.sh
+        #sed -i "s#https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/unblockmusic/UnblockNeteaseMusic#https://cdn.jsdelivr.net/gh/${BUILD_OWNER}/AutoBuild-Padavan/${BASE_PATH}/B70/replace/unblockmusic/UnblockNeteaseMusic#g" ./unblockmusic.sh
         
     - name: Frp_SH                #替换frp脚本
       run: |        
-        cp -f $BASE_PATH/B70/replace/frp_script.sh $WORK_PATH/trunk/user/frp
+        cp -f $BASE_PATH/$TNAME/replace/frp_script.sh $WORK_PATH/trunk/user/frp
         cd $WORK_PATH/trunk/user/frp
         echo "更改frpc版本"
         sed -i "s/0.29.0/0.34.1/g" ./Makefile
         echo "替换默认frpc脚本配置"
         sudo chmod +x ./frp_script.sh
         
-    - name: B70_SH                #自定义diy配置
+    - name: B70_配置              #自定义diy配置
       run: |        
-        cp -f $BASE_PATH/B70/B70.sh  $WORK_PATH/trunk
+        cp -f $BASE_PATH/$TNAME/B70.sh  $WORK_PATH/trunk
         cd $WORK_PATH/trunk
         sudo chmod +x ./B70.sh
         echo "执行B70_SH"
